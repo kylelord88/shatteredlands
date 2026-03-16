@@ -554,7 +554,7 @@ async function saveSetup() {
 
   // Test the connection using raw fetch — no library needed
   try {
-    const res = await fetch(url + '/rest/v1/codex_entries?limit=1', {
+    const res = await fetch(url + '/rest/v1/shattered_lands?limit=1', {
       headers: { 'apikey': key, 'Authorization': 'Bearer ' + key }
     });
     if (res.status === 401) throw new Error('Invalid API key.');
@@ -726,7 +726,7 @@ async function init() {
   } catch(e) {
     showLoading(false);
     if (e.message && e.message.includes('42P01')) {
-      const sql = `CREATE TABLE codex_entries (\n  id text PRIMARY KEY,\n  section text NOT NULL,\n  data jsonb NOT NULL DEFAULT '{}',\n  created_at timestamptz DEFAULT now()\n);\n\nALTER TABLE codex_entries ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "public read" ON codex_entries FOR SELECT USING (true);\nCREATE POLICY "public write" ON codex_entries FOR ALL USING (true);`;
+      const sql = `CREATE TABLE shattered_lands (\n  id text PRIMARY KEY,\n  section text NOT NULL,\n  data jsonb NOT NULL DEFAULT '{}',\n  created_at timestamptz DEFAULT now()\n);\n\nALTER TABLE shattered_lands ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "public read" ON shattered_lands FOR SELECT USING (true);\nCREATE POLICY "public write" ON shattered_lands FOR ALL USING (true);`;
       alert('One more step! In Supabase go to:\nSQL Editor → New Query\n\nPaste and run this:\n\n' + sql + '\n\nThen refresh this page.');
     } else {
       notify('Load failed: ' + e.message, 'error');
@@ -740,14 +740,14 @@ async function init() {
 
 // ── DATA ────────────────────────────────────────────────────────────────
 async function loadAllData() {
-  const rows = await sbSelect('codex_entries', 'section=neq.__meta__&limit=1000');
+  const rows = await sbSelect('shattered_lands', 'section=neq.__meta__&limit=1000');
   for (const s of Object.keys(db)) db[s] = [];
   for (const row of (rows || [])) {
     if (db[row.section]) db[row.section].push({ id: row.id, ...row.data });
   }
   // Load campaign meta
   try {
-    const meta = await sbSelect('codex_entries', 'id=eq.__meta__');
+    const meta = await sbSelect('shattered_lands', 'id=eq.__meta__');
     if (meta?.[0]?.data?.campaignName) window._campaignName = meta[0].data.campaignName;
   } catch {}
 }
@@ -756,14 +756,14 @@ async function upsertEntry(section, entry) {
   setSyncState('syncing');
   try {
     const { id, ...data } = entry;
-    await sbUpsert('codex_entries', { id, section, data });
+    await sbUpsert('shattered_lands', { id, section, data });
     setSyncState('ok');
   } catch(e) { setSyncState('error'); throw e; }
 }
 
 async function deleteEntryRemote(id) {
   setSyncState('syncing');
-  try { await sbDelete('codex_entries', id); setSyncState('ok'); }
+  try { await sbDelete('shattered_lands', id); setSyncState('ok'); }
   catch(e) { setSyncState('error'); throw e; }
 }
 
@@ -772,7 +772,7 @@ async function saveCampaignMeta() {
   if (!el) return;
   const name = el.value;
   window._campaignName = name;
-  try { await sbUpsert('codex_entries', { id: '__meta__', section: '__meta__', data: { campaignName: name } }); } catch {}
+  try { await sbUpsert('shattered_lands', { id: '__meta__', section: '__meta__', data: { campaignName: name } }); } catch {}
 }
 
 // ── RENDER UI ───────────────────────────────────────────────────────────
